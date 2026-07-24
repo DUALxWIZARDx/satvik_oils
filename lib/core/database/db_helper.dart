@@ -1,12 +1,18 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import 'db_schema.dart';
+import 'migrations/v1_initial_schema.dart';
+
 class DbHelper {
   DbHelper._();
 
   static final DbHelper instance = DbHelper._();
   static const String databaseName = 'satvik_oils.db';
-  static const int schemaVersion = 1;
+  static const int schemaVersion = DbSchema.version;
+
+  static final Map<int, Future<void> Function(DatabaseExecutor db)>
+  _migrations = {1: V1InitialSchema.migrate};
 
   Database? _database;
 
@@ -45,7 +51,57 @@ class DbHelper {
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
-      onCreate: (db, version) async {},
+      onCreate: (db, version) async {
+        await _runMigrations(db, fromVersion: 0, toVersion: version);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        await _runMigrations(
+          db,
+          fromVersion: oldVersion,
+          toVersion: newVersion,
+        );
+      },
+      onOpen: (db) async {
+        await _repairEmptyV1Database(db);
+      },
     );
+  }
+
+  Future<void> _runMigrations(
+    DatabaseExecutor db, {
+    required int fromVersion,
+    required int toVersion,
+  }) async {
+    for (var version = fromVersion + 1; version <= toVersion; version++) {
+      final migration = _migrations[version];
+      if (migration == null) {
+        throw StateError('Missing database migration for version $version');
+      }
+
+      await migration(db);
+    }
+  }
+
+  Future<void> _repairEmptyV1Database(Database db) async {
+    final requiredTables = {
+      ProductTable.tableName,
+      ProductPriceTable.tableName,
+      CustomerTable.tableName,
+      SaleTable.tableName,
+      AppSettingsTable.tableName,
+    };
+    final existingTables = await db.query(
+      'sqlite_master',
+      columns: ['name'],
+      where: 'type = ?',
+      whereArgs: ['table'],
+    );
+    final existingTableNames = existingTables
+        .map((table) => table['name'] as String)
+        .toSet();
+
+    if (!existingTableNames.containsAll(requiredTables)) {
+      await V1InitialSchema.migrate(db);
+    }
   }
 }
