@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/navigation_provider.dart';
+import '../products_pricing/products_pricing_screen.dart';
 import '../reports/reports_screen.dart';
 import '../sale_history/sale_history_screen.dart';
 import '../sales/sales_screen.dart';
@@ -15,6 +16,7 @@ class AppShell extends StatelessWidget {
   static const _screens = <Widget>[
     SalesScreen(),
     SaleHistoryScreen(),
+    ProductsPricingScreen(),
     ReportsScreen(),
     SettingsScreen(),
   ];

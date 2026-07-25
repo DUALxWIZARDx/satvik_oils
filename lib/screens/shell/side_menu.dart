@@ -11,6 +11,7 @@ class SideMenu extends StatelessWidget {
   static const _items = [
     _MenuItem(label: 'Sales', icon: Icons.point_of_sale_outlined),
     _MenuItem(label: 'Sale History', icon: Icons.receipt_long_outlined),
+    _MenuItem(label: 'Products & Pricing', icon: Icons.inventory_2_outlined),
     _MenuItem(label: 'Reports', icon: Icons.bar_chart_outlined),
     _MenuItem(label: 'Settings', icon: Icons.settings_outlined),
   ];
