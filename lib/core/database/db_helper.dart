@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'db_schema.dart';
 import 'migrations/v1_initial_schema.dart';
+import 'migrations/v2_add_order_id_to_sales.dart';
 
 class DbHelper {
   DbHelper._();
@@ -12,7 +13,10 @@ class DbHelper {
   static const int schemaVersion = DbSchema.version;
 
   static final Map<int, Future<void> Function(DatabaseExecutor db)>
-  _migrations = {1: V1InitialSchema.migrate};
+  _migrations = {
+    1: V1InitialSchema.migrate,
+    2: V2AddOrderIdToSales.migrate,
+  };
 
   Database? _database;
 

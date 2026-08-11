@@ -1,7 +1,6 @@
 class DbSchema {
   const DbSchema._();
-
-  static const int version = 1;
+  static const int version = 2;
 }
 
 class ProductTable {
@@ -59,6 +58,7 @@ class SaleTable {
   static const String paymentMode = 'payment_mode';
   static const String customerId = 'customer_id';
   static const String syncedAt = 'synced_at';
+  static const String orderId = 'order_id';
 }
 
 class AppSettingsTable {

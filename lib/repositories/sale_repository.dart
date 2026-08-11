@@ -29,6 +29,7 @@ class SaleRepository {
     required double totalAmount,
     required PaymentMode paymentMode,
     String? customerId,
+    String? orderId,
     DateTime? createdAt,
   }) {
     final saleCreatedAt = createdAt ?? DateTime.now();
@@ -47,6 +48,7 @@ class SaleRepository {
       discountValue: discountValue,
       totalAmount: totalAmount,
       paymentMode: paymentMode,
+      orderId: orderId,
       customerId: customerId,
     );
   }

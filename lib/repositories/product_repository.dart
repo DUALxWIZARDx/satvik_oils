@@ -6,6 +6,14 @@ import '../core/database/db_helper.dart';
 import '../core/database/db_schema.dart';
 import '../models/product_model.dart';
 
+typedef CurrentProductPrice = ({
+  String quantityVariant,
+  double costPrice,
+  double sellingPrice,
+  DateTime effectiveFrom,
+  bool isPlaceholder,
+});
+
 class ProductRepository {
   ProductRepository({DbHelper? dbHelper, Uuid? uuid})
     : _dbHelper = dbHelper ?? DbHelper.instance,
@@ -77,10 +85,34 @@ class ProductRepository {
     required String productId,
     required String quantityVariant,
   }) async {
+    final currentPrice = await getCurrentPriceDetails(
+      productId: productId,
+      quantityVariant: quantityVariant,
+    );
+
+    if (currentPrice == null) {
+      return null;
+    }
+
+    return (
+      costPrice: currentPrice.costPrice,
+      sellingPrice: currentPrice.sellingPrice,
+    );
+  }
+
+  Future<CurrentProductPrice?> getCurrentPriceDetails({
+    required String productId,
+    required String quantityVariant,
+  }) async {
     final db = await _dbHelper.database;
     final rows = await db.query(
       ProductPriceTable.tableName,
-      columns: [ProductPriceTable.sellingPrice, ProductPriceTable.costPrice],
+      columns: [
+        ProductPriceTable.quantityVariant,
+        ProductPriceTable.sellingPrice,
+        ProductPriceTable.costPrice,
+        ProductPriceTable.effectiveFrom,
+      ],
       where:
           '${ProductPriceTable.productId} = ? AND '
           '${ProductPriceTable.quantityVariant} = ?',
@@ -94,10 +126,42 @@ class ProductRepository {
     }
 
     final row = rows.first;
-    return (
-      costPrice: (row[ProductPriceTable.costPrice] as num).toDouble(),
-      sellingPrice: (row[ProductPriceTable.sellingPrice] as num).toDouble(),
+    final sellingPrice = (row[ProductPriceTable.sellingPrice] as num).toDouble();
+    final costPrice = (row[ProductPriceTable.costPrice] as num).toDouble();
+    final effectiveFrom = DateTime.parse(
+      row[ProductPriceTable.effectiveFrom] as String,
     );
+    final isPlaceholder = sellingPrice == 0.0 &&
+        costPrice == 0.0 &&
+        effectiveFrom == DateTime.utc(1970, 1, 1);
+
+    return (
+      quantityVariant: row[ProductPriceTable.quantityVariant] as String,
+      costPrice: costPrice,
+      sellingPrice: sellingPrice,
+      effectiveFrom: effectiveFrom,
+      isPlaceholder: isPlaceholder,
+    );
+  }
+
+  Future<List<CurrentProductPrice>> getCurrentPrices({
+    required String productId,
+  }) async {
+    final quantityVariants = await getQuantityVariants(productId);
+    final currentPrices = <CurrentProductPrice>[];
+
+    for (final quantityVariant in quantityVariants) {
+      final currentPrice = await getCurrentPriceDetails(
+        productId: productId,
+        quantityVariant: quantityVariant,
+      );
+
+      if (currentPrice != null) {
+        currentPrices.add(currentPrice);
+      }
+    }
+
+    return currentPrices;
   }
 
   Future<void> savePrice({
@@ -117,6 +181,57 @@ class ProductRepository {
       ProductPriceTable.effectiveFrom: (effectiveFrom ?? DateTime.now())
           .toIso8601String(),
     });
+  }
+
+  int _variantVolumeMl(String variant) {
+    if (variant.endsWith('ml')) {
+      return int.tryParse(variant.replaceAll('ml', '')) ?? 0;
+    }
+
+    if (variant.endsWith('L')) {
+      final numPart = variant.replaceAll('L', '');
+      final parsed = double.tryParse(numPart);
+      if (parsed == null) return 0;
+      return (parsed * 1000).toInt();
+    }
+
+    return 0;
+  }
+
+  /// Save base 1L cost and propagate calculated cost prices for all variants.
+  /// Selling price for non-1L variants is preserved from their current selling price.
+  Future<void> saveBaseCostAndPropagate({
+    required String productId,
+    required double baseCostPrice1L,
+    required double sellingPriceFor1L,
+    DateTime? effectiveFrom,
+  }) async {
+    // Determine variants to update
+    final product = ProductCatalog.products.firstWhere((p) => p.id == productId);
+    final variants = product.quantityVariants;
+
+    // Insert price row for each variant with calculated cost and appropriate selling price
+    for (final variant in variants) {
+      final volumeMl = _variantVolumeMl(variant);
+      final multiplier = volumeMl / 1000.0;
+      final calculatedCost = (baseCostPrice1L * multiplier);
+
+      double sellingPrice = 0.0;
+      if (variant == '1L') {
+        sellingPrice = sellingPriceFor1L;
+      } else {
+        final current = await getCurrentPriceDetails(productId: productId, quantityVariant: variant);
+        sellingPrice = current?.sellingPrice ?? 0.0;
+      }
+
+      await savePrice(
+        productId: productId,
+        quantityVariant: variant,
+        sellingPrice: sellingPrice,
+        costPrice: double.parse(calculatedCost.toStringAsFixed(2)),
+        effectiveFrom: effectiveFrom,
+      );
+    }
   }
 
   Future<List<String>> getQuantityVariants(String productId) async {

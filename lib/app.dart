@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/customer_provider.dart';
 import 'providers/navigation_provider.dart';
+import 'providers/products_pricing_provider.dart';
 import 'providers/reports_provider.dart';
 import 'providers/sale_history_provider.dart';
 import 'providers/sales_provider.dart';
@@ -23,6 +24,7 @@ class SatvikOilsApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReportsProvider()),
         ChangeNotifierProvider(create: (_) => CustomerProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ChangeNotifierProvider(create: (_) => ProductsPricingProvider()),
       ],
       child: MaterialApp(
         title: 'Satvik Oils',

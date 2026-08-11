@@ -17,6 +17,7 @@ class SaleModel {
     required this.discountValue,
     required this.totalAmount,
     required this.paymentMode,
+    this.orderId,
     this.customerId,
     this.syncedAt,
   });
@@ -34,6 +35,7 @@ class SaleModel {
   final double discountValue;
   final double totalAmount;
   final PaymentMode paymentMode;
+  final String? orderId;
   final String? customerId;
   final DateTime? syncedAt;
 
@@ -56,6 +58,7 @@ class SaleModel {
       paymentMode: PaymentMode.fromDbValue(
         map[SaleTable.paymentMode] as String,
       ),
+      orderId: map[SaleTable.orderId] as String?,
       customerId: map[SaleTable.customerId] as String?,
       syncedAt: map[SaleTable.syncedAt] == null
           ? null
@@ -78,6 +81,7 @@ class SaleModel {
       SaleTable.discountValue: discountValue,
       SaleTable.totalAmount: totalAmount,
       SaleTable.paymentMode: paymentMode.dbValue,
+      SaleTable.orderId: orderId,
       SaleTable.customerId: customerId,
       SaleTable.syncedAt: syncedAt?.toIso8601String(),
     };
@@ -97,6 +101,7 @@ class SaleModel {
     double? discountValue,
     double? totalAmount,
     PaymentMode? paymentMode,
+    String? orderId,
     String? customerId,
     DateTime? syncedAt,
   }) {
@@ -114,6 +119,7 @@ class SaleModel {
       discountValue: discountValue ?? this.discountValue,
       totalAmount: totalAmount ?? this.totalAmount,
       paymentMode: paymentMode ?? this.paymentMode,
+      orderId: orderId ?? this.orderId,
       customerId: customerId ?? this.customerId,
       syncedAt: syncedAt ?? this.syncedAt,
     );
