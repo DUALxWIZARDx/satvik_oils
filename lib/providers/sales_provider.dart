@@ -34,9 +34,24 @@ class SalesProvider extends ChangeNotifier {
   final List<CartItem> _cart = [];
   List<CartItem> get cart => List.unmodifiable(_cart);
 
+  int _orderDiscountPercent = 0; // 0 means no discount
+
+  int get orderDiscountPercent => _orderDiscountPercent;
+
+  void setOrderDiscountPercent(int percent) {
+    _orderDiscountPercent = percent.clamp(0, 100);
+    notifyListeners();
+  }
+
   final Uuid _uuid = const Uuid();
 
   double get cartTotal => _cart.fold(0.0, (s, it) => s + it.lineTotal);
+
+  double get subtotal => cartTotal;
+
+  double get discountAmount => (subtotal * _orderDiscountPercent / 100.0);
+
+  double get finalTotal => (subtotal - discountAmount).clamp(0, double.infinity).toDouble();
 
   Future<void> refreshCurrentPrice() async {
     final product = selectedProduct;
@@ -132,6 +147,11 @@ class SalesProvider extends ChangeNotifier {
 
     final orderId = _uuid.v4();
 
+    final orderSubtotal = subtotal;
+    final orderDiscountPercent = _orderDiscountPercent;
+    final orderDiscountAmount = discountAmount;
+    final orderFinalTotal = finalTotal;
+
     try {
       for (final item in List<CartItem>.from(_cart)) {
         final sale = _saleRepository.buildNewSale(
@@ -146,6 +166,10 @@ class SalesProvider extends ChangeNotifier {
           paymentMode: selectedPaymentMode,
           customerId: customerId,
           orderId: orderId,
+          orderSubtotal: orderSubtotal,
+          orderDiscountPercent: orderDiscountPercent,
+          orderDiscountAmount: orderDiscountAmount,
+          orderFinalTotal: orderFinalTotal,
         );
 
         await _saleRepository.insertSale(sale);

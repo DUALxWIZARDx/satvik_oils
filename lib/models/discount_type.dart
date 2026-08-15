@@ -1,7 +1,10 @@
 enum DiscountType {
   none('none', 'None', 0),
   fivePercent('percent_5', '5%', 5),
+  sevenPercent('percent_7', '7%', 7),
   tenPercent('percent_10', '10%', 10),
+  twelvePercent('percent_12', '12%', 12),
+  fifteenPercent('percent_15', '15%', 15),
   custom('custom', 'Custom', null);
 
   const DiscountType(this.dbValue, this.label, this.percent);

@@ -20,6 +20,10 @@ class SaleModel {
     this.orderId,
     this.customerId,
     this.syncedAt,
+    this.orderSubtotal,
+    this.orderDiscountPercent,
+    this.orderDiscountAmount,
+    this.orderFinalTotal,
   });
 
   final String id;
@@ -38,6 +42,10 @@ class SaleModel {
   final String? orderId;
   final String? customerId;
   final DateTime? syncedAt;
+  final double? orderSubtotal;
+  final int? orderDiscountPercent;
+  final double? orderDiscountAmount;
+  final double? orderFinalTotal;
 
   factory SaleModel.fromMap(Map<String, Object?> map) {
     return SaleModel(
@@ -63,6 +71,18 @@ class SaleModel {
       syncedAt: map[SaleTable.syncedAt] == null
           ? null
           : DateTime.parse(map[SaleTable.syncedAt] as String),
+        orderSubtotal: map.containsKey(SaleTable.orderSubtotal) && map[SaleTable.orderSubtotal] != null
+          ? (map[SaleTable.orderSubtotal] as num).toDouble()
+          : null,
+        orderDiscountPercent: map.containsKey(SaleTable.orderDiscountPercent) && map[SaleTable.orderDiscountPercent] != null
+          ? (map[SaleTable.orderDiscountPercent] as num).toInt()
+          : null,
+        orderDiscountAmount: map.containsKey(SaleTable.orderDiscountAmount) && map[SaleTable.orderDiscountAmount] != null
+          ? (map[SaleTable.orderDiscountAmount] as num).toDouble()
+          : null,
+        orderFinalTotal: map.containsKey(SaleTable.orderFinalTotal) && map[SaleTable.orderFinalTotal] != null
+          ? (map[SaleTable.orderFinalTotal] as num).toDouble()
+          : null,
     );
   }
 
@@ -84,6 +104,10 @@ class SaleModel {
       SaleTable.orderId: orderId,
       SaleTable.customerId: customerId,
       SaleTable.syncedAt: syncedAt?.toIso8601String(),
+      SaleTable.orderSubtotal: orderSubtotal,
+      SaleTable.orderDiscountPercent: orderDiscountPercent,
+      SaleTable.orderDiscountAmount: orderDiscountAmount,
+      SaleTable.orderFinalTotal: orderFinalTotal,
     };
   }
 
@@ -104,6 +128,10 @@ class SaleModel {
     String? orderId,
     String? customerId,
     DateTime? syncedAt,
+    double? orderSubtotal,
+    int? orderDiscountPercent,
+    double? orderDiscountAmount,
+    double? orderFinalTotal,
   }) {
     return SaleModel(
       id: id ?? this.id,
@@ -122,6 +150,10 @@ class SaleModel {
       orderId: orderId ?? this.orderId,
       customerId: customerId ?? this.customerId,
       syncedAt: syncedAt ?? this.syncedAt,
+      orderSubtotal: orderSubtotal ?? this.orderSubtotal,
+      orderDiscountPercent: orderDiscountPercent ?? this.orderDiscountPercent,
+      orderDiscountAmount: orderDiscountAmount ?? this.orderDiscountAmount,
+      orderFinalTotal: orderFinalTotal ?? this.orderFinalTotal,
     );
   }
 }

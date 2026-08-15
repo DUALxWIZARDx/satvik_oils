@@ -31,6 +31,10 @@ class SaleRepository {
     String? customerId,
     String? orderId,
     DateTime? createdAt,
+    double? orderSubtotal,
+    int? orderDiscountPercent,
+    double? orderDiscountAmount,
+    double? orderFinalTotal,
   }) {
     final saleCreatedAt = createdAt ?? DateTime.now();
 
@@ -50,6 +54,10 @@ class SaleRepository {
       paymentMode: paymentMode,
       orderId: orderId,
       customerId: customerId,
+      orderSubtotal: orderSubtotal,
+      orderDiscountPercent: orderDiscountPercent,
+      orderDiscountAmount: orderDiscountAmount,
+      orderFinalTotal: orderFinalTotal,
     );
   }
 

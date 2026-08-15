@@ -58,7 +58,7 @@ class V1InitialSchema {
           CHECK (${SaleTable.costPriceSnapshot} >= 0),
         ${SaleTable.discountType} TEXT NOT NULL
           CHECK (${SaleTable.discountType}
-            IN ('none', 'percent_5', 'percent_10', 'custom')),
+            IN ('none', 'percent_5', 'percent_7', 'percent_10', 'percent_12', 'percent_15', 'custom')),
         ${SaleTable.discountValue} REAL NOT NULL DEFAULT 0
           CHECK (${SaleTable.discountValue} >= 0),
         ${SaleTable.totalAmount} REAL NOT NULL
@@ -66,6 +66,11 @@ class V1InitialSchema {
         ${SaleTable.paymentMode} TEXT NOT NULL
           CHECK (${SaleTable.paymentMode} IN ('cash', 'upi', 'card')),
         ${SaleTable.customerId} TEXT,
+        ${SaleTable.orderId} TEXT,
+        ${SaleTable.orderSubtotal} REAL,
+        ${SaleTable.orderDiscountPercent} INTEGER,
+        ${SaleTable.orderDiscountAmount} REAL,
+        ${SaleTable.orderFinalTotal} REAL,
         ${SaleTable.syncedAt} TEXT,
         FOREIGN KEY (${SaleTable.productId})
           REFERENCES ${ProductTable.tableName} (${ProductTable.id})

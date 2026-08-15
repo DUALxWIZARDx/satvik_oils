@@ -1,6 +1,6 @@
 class DbSchema {
   const DbSchema._();
-  static const int version = 2;
+  static const int version = 3;
 }
 
 class ProductTable {
@@ -59,6 +59,10 @@ class SaleTable {
   static const String customerId = 'customer_id';
   static const String syncedAt = 'synced_at';
   static const String orderId = 'order_id';
+  static const String orderSubtotal = 'order_subtotal';
+  static const String orderDiscountPercent = 'order_discount_percent';
+  static const String orderDiscountAmount = 'order_discount_amount';
+  static const String orderFinalTotal = 'order_final_total';
 }
 
 class AppSettingsTable {

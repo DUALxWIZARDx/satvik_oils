@@ -45,11 +45,47 @@ class CartScreen extends StatelessWidget {
                             ),
                     ),
                     const SizedBox(height: AppDimens.spacingLarge),
+                    // Discount chips
+                    Wrap(
+                      spacing: AppDimens.spacingSmall,
+                      children: [5, 7, 10, 12, 15].map((p) {
+                        final selected = provider.orderDiscountPercent == p;
+                        return ChoiceChip(
+                          label: Text('$p%'),
+                          selected: selected,
+                          onSelected: (_) => provider.setOrderDiscountPercent(selected ? 0 : p),
+                          backgroundColor: AppColors.surfaceElevated,
+                          selectedColor: AppColors.primary,
+                          labelStyle: selected ? AppTextStyles.body.copyWith(color: AppColors.textPrimary) : AppTextStyles.body,
+                          side: BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppDimens.spacingLarge),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Total Sale Amount', style: AppTextStyles.label),
-                        Text('₹${provider.cartTotal.toStringAsFixed(2)}', style: AppTextStyles.metric),
+                        Text('Subtotal', style: AppTextStyles.label),
+                        Text('₹${provider.subtotal.toStringAsFixed(2)}', style: AppTextStyles.metric),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimens.spacingSmall),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Discount (${provider.orderDiscountPercent}%)', style: AppTextStyles.label),
+                        Text('-₹${provider.discountAmount.toStringAsFixed(2)}', style: AppTextStyles.metric),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimens.spacingSmall),
+                    Divider(color: AppColors.border),
+                    const SizedBox(height: AppDimens.spacingSmall),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Final Total', style: AppTextStyles.label),
+                        Text('₹${provider.finalTotal.toStringAsFixed(2)}', style: AppTextStyles.metric),
                       ],
                     ),
                     const SizedBox(height: AppDimens.spacingSmall),
