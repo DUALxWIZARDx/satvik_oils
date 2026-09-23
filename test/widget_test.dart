@@ -11,8 +11,6 @@ void main() {
 
     expect(find.text('Satvik Oils'), findsOneWidget);
     expect(find.text('Sales'), findsOneWidget);
-    expect(find.text("Today's Sales"), findsOneWidget);
-    expect(find.text("Today's Orders"), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pump();

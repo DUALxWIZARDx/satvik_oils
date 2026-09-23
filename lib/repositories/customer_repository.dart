@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../core/database/db_helper.dart';
 import '../core/database/db_schema.dart';
 import '../models/customer_model.dart';
+import '../models/customer_analytics.dart';
 
 class CustomerRepository {
   CustomerRepository({DbHelper? dbHelper, Uuid? uuid})
@@ -17,6 +18,8 @@ class CustomerRepository {
     String phone = '',
     String address = '',
     DateTime? createdAt,
+    bool isMembership = false,
+    double membershipFee = 0,
   }) async {
     final customer = CustomerModel(
       id: _uuid.v4(),
@@ -24,11 +27,27 @@ class CustomerRepository {
       phone: phone,
       address: address,
       createdAt: createdAt ?? DateTime.now(),
+      isMembership: isMembership,
+      membershipFee: membershipFee,
     );
 
     final db = await _dbHelper.database;
     await db.insert(CustomerTable.tableName, customer.toMap());
     return customer;
+  }
+
+  Future<CustomerModel?> getCustomerByPhone(String phone) async {
+    final db = await _dbHelper.database;
+    final rows = await db.query(CustomerTable.tableName,
+      where: '${CustomerTable.phone} = ?', whereArgs: [phone.trim()], limit: 1);
+    return rows.isEmpty ? null : CustomerModel.fromMap(rows.first);
+  }
+
+  Future<List<CustomerModel>> getMembershipCustomers() async {
+    final db = await _dbHelper.database;
+    final rows = await db.query(CustomerTable.tableName,
+      where: '${CustomerTable.isMembership} = 1', orderBy: CustomerTable.name);
+    return rows.map(CustomerModel.fromMap).toList();
   }
 
   Future<List<CustomerModel>> getCustomers({String? searchTerm}) async {
@@ -84,5 +103,25 @@ class CustomerRepository {
       where: '${CustomerTable.id} = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<List<CustomerAnalytics>> getCustomerAnalytics() async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery('''
+      WITH order_summaries AS (
+        SELECT customer_id, COALESCE(order_id, id) AS order_key,
+          CASE WHEN order_id IS NOT NULL AND order_final_total IS NOT NULL
+            THEN MAX(order_final_total) ELSE SUM(total_amount) END AS order_total,
+          MAX(created_at) AS last_purchase
+        FROM sales WHERE customer_id IS NOT NULL
+        GROUP BY customer_id, COALESCE(order_id, id)
+      )
+      SELECT c.*, COUNT(o.order_key) AS order_count,
+        COALESCE(SUM(o.order_total), 0) AS total_spent,
+        MAX(o.last_purchase) AS last_purchase
+      FROM customers c LEFT JOIN order_summaries o ON o.customer_id = c.id
+      GROUP BY c.id ORDER BY c.name
+    ''');
+    return rows.map((row) => CustomerAnalytics(customer: CustomerModel.fromMap(row), orderCount: (row['order_count'] as num).toInt(), totalSpent: (row['total_spent'] as num).toDouble(), lastPurchase: row['last_purchase'] == null ? null : DateTime.parse(row['last_purchase'] as String))).toList();
   }
 }

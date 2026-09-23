@@ -1,6 +1,6 @@
 class DbSchema {
   const DbSchema._();
-  static const int version = 3;
+  static const int version = 4;
 }
 
 class ProductTable {
@@ -36,6 +36,8 @@ class CustomerTable {
   static const String phone = 'phone';
   static const String address = 'address';
   static const String createdAt = 'created_at';
+  static const String isMembership = 'is_membership';
+  static const String membershipFee = 'membership_fee';
 }
 
 class SaleTable {
@@ -63,6 +65,7 @@ class SaleTable {
   static const String orderDiscountPercent = 'order_discount_percent';
   static const String orderDiscountAmount = 'order_discount_amount';
   static const String orderFinalTotal = 'order_final_total';
+  static const String orderDiscountSource = 'order_discount_source';
 }
 
 class AppSettingsTable {

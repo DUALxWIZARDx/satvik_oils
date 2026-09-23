@@ -7,6 +7,8 @@ class CustomerModel {
     required this.phone,
     required this.address,
     required this.createdAt,
+    this.isMembership = false,
+    this.membershipFee = 0,
   });
 
   final String id;
@@ -14,6 +16,8 @@ class CustomerModel {
   final String phone;
   final String address;
   final DateTime createdAt;
+  final bool isMembership;
+  final double membershipFee;
 
   factory CustomerModel.fromMap(Map<String, Object?> map) {
     return CustomerModel(
@@ -22,6 +26,8 @@ class CustomerModel {
       phone: map[CustomerTable.phone] as String,
       address: map[CustomerTable.address] as String,
       createdAt: DateTime.parse(map[CustomerTable.createdAt] as String),
+      isMembership: (map[CustomerTable.isMembership] as num? ?? 0) == 1,
+      membershipFee: (map[CustomerTable.membershipFee] as num? ?? 0).toDouble(),
     );
   }
 
@@ -32,6 +38,8 @@ class CustomerModel {
       CustomerTable.phone: phone,
       CustomerTable.address: address,
       CustomerTable.createdAt: createdAt.toIso8601String(),
+      CustomerTable.isMembership: isMembership ? 1 : 0,
+      CustomerTable.membershipFee: membershipFee,
     };
   }
 
@@ -41,6 +49,8 @@ class CustomerModel {
     String? phone,
     String? address,
     DateTime? createdAt,
+    bool? isMembership,
+    double? membershipFee,
   }) {
     return CustomerModel(
       id: id ?? this.id,
@@ -48,6 +58,8 @@ class CustomerModel {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
+      isMembership: isMembership ?? this.isMembership,
+      membershipFee: membershipFee ?? this.membershipFee,
     );
   }
 }

@@ -40,6 +40,9 @@ class V1InitialSchema {
         ${CustomerTable.phone} TEXT NOT NULL DEFAULT '',
         ${CustomerTable.address} TEXT NOT NULL DEFAULT '',
         ${CustomerTable.createdAt} TEXT NOT NULL
+        ,${CustomerTable.isMembership} INTEGER NOT NULL DEFAULT 0
+          CHECK (${CustomerTable.isMembership} IN (0, 1))
+        ,${CustomerTable.membershipFee} REAL NOT NULL DEFAULT 0
       )
     ''');
 
@@ -71,6 +74,7 @@ class V1InitialSchema {
         ${SaleTable.orderDiscountPercent} INTEGER,
         ${SaleTable.orderDiscountAmount} REAL,
         ${SaleTable.orderFinalTotal} REAL,
+        ${SaleTable.orderDiscountSource} TEXT,
         ${SaleTable.syncedAt} TEXT,
         FOREIGN KEY (${SaleTable.productId})
           REFERENCES ${ProductTable.tableName} (${ProductTable.id})

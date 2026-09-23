@@ -24,6 +24,7 @@ class SaleModel {
     this.orderDiscountPercent,
     this.orderDiscountAmount,
     this.orderFinalTotal,
+    this.orderDiscountSource,
   });
 
   final String id;
@@ -46,6 +47,7 @@ class SaleModel {
   final int? orderDiscountPercent;
   final double? orderDiscountAmount;
   final double? orderFinalTotal;
+  final String? orderDiscountSource;
 
   factory SaleModel.fromMap(Map<String, Object?> map) {
     return SaleModel(
@@ -83,6 +85,7 @@ class SaleModel {
         orderFinalTotal: map.containsKey(SaleTable.orderFinalTotal) && map[SaleTable.orderFinalTotal] != null
           ? (map[SaleTable.orderFinalTotal] as num).toDouble()
           : null,
+        orderDiscountSource: map[SaleTable.orderDiscountSource] as String?,
     );
   }
 
@@ -108,6 +111,7 @@ class SaleModel {
       SaleTable.orderDiscountPercent: orderDiscountPercent,
       SaleTable.orderDiscountAmount: orderDiscountAmount,
       SaleTable.orderFinalTotal: orderFinalTotal,
+      SaleTable.orderDiscountSource: orderDiscountSource,
     };
   }
 
@@ -132,6 +136,7 @@ class SaleModel {
     int? orderDiscountPercent,
     double? orderDiscountAmount,
     double? orderFinalTotal,
+    String? orderDiscountSource,
   }) {
     return SaleModel(
       id: id ?? this.id,
@@ -154,6 +159,7 @@ class SaleModel {
       orderDiscountPercent: orderDiscountPercent ?? this.orderDiscountPercent,
       orderDiscountAmount: orderDiscountAmount ?? this.orderDiscountAmount,
       orderFinalTotal: orderFinalTotal ?? this.orderFinalTotal,
+      orderDiscountSource: orderDiscountSource ?? this.orderDiscountSource,
     );
   }
 }

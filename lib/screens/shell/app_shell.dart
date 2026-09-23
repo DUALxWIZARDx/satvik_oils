@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/navigation_provider.dart';
+import '../dashboard/dashboard_screen.dart';
+import '../analytics/analytics_screen.dart';
 import '../products_pricing/products_pricing_screen.dart';
-import '../reports/reports_screen.dart';
 import '../sale_history/sale_history_screen.dart';
 import '../sales/sales_screen.dart';
 import '../settings/settings_screen.dart';
-import 'side_menu.dart';
+import 'floating_bottom_nav.dart';
+import 'smooth_page_switcher.dart';
 import 'top_bar.dart';
 
 class AppShell extends StatelessWidget {
@@ -15,9 +17,10 @@ class AppShell extends StatelessWidget {
 
   static const _screens = <Widget>[
     SalesScreen(),
-    SaleHistoryScreen(),
+    DashboardScreen(),
     ProductsPricingScreen(),
-    ReportsScreen(),
+    SaleHistoryScreen(),
+    AnalyticsScreen(),
     SettingsScreen(),
   ];
 
@@ -28,13 +31,27 @@ class AppShell extends StatelessWidget {
     );
 
     return Scaffold(
-      drawer: const SideMenu(),
-      body: Column(
+      body: Stack(
+        alignment: Alignment.bottomCenter,
         children: [
-          const TopBar(),
-          Expanded(
-            child: IndexedStack(index: currentIndex, children: _screens),
+          Column(
+            children: [
+              const TopBar(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: FloatingBottomNav.reservedHeight,
+                  ),
+                  child: SmoothPageSwitcher(
+                    animatedIndices: const {0, 1, 2, 4},
+                    currentIndex: currentIndex,
+                    children: _screens,
+                  ),
+                ),
+              ),
+            ],
           ),
+          const Positioned(bottom: 0, child: FloatingBottomNav()),
         ],
       ),
     );

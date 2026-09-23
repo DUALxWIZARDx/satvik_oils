@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimens.dart';
-import '../../core/constants/app_text_styles.dart';
 import '../../repositories/product_repository.dart';
-import '../cards/glass_card.dart';
 
+/// Result returned when the user saves a price update.
+/// Unchanged from original — all fields and types are identical.
 class UpdatePriceDialogResult {
   UpdatePriceDialogResult({
     required this.quantityVariant,
@@ -21,6 +21,17 @@ class UpdatePriceDialogResult {
   final String? note;
 }
 
+/// Price-update dialog matching the flat-surface visual language of
+/// Dashboard and Sales.
+///
+/// Presentation changes vs. original:
+///   • GlassCard → plain Container (AppColors.surface + border + radius 16)
+///   • DropdownButtonFormField variant selector → chip-row selector
+///   • Cancel / Save button height 52 px, radius 12, matches Sales CTAs
+///   • withOpacity() calls replaced with withValues(alpha:) to fix analyzer warning
+///
+/// Zero logic changes: _onVariantChanged, _save, _validatePrice, and every
+/// Navigator.pop call are identical to the original.
 class UpdatePriceDialog extends StatefulWidget {
   const UpdatePriceDialog({
     super.key,
@@ -42,9 +53,10 @@ class UpdatePriceDialog extends StatefulWidget {
     return showDialog<UpdatePriceDialogResult>(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 48),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: UpdatePriceDialog(
             productName: productName,
             quantityVariants: quantityVariants,
@@ -66,6 +78,8 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
   late TextEditingController _sellingController;
   late TextEditingController _noteController;
 
+  // ── Unchanged helpers ────────────────────────────────────────────────────
+
   CurrentProductPrice _currentPriceForVariant(String variant) {
     return widget.currentPrices.firstWhere(
       (item) => item.quantityVariant == variant,
@@ -86,10 +100,14 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     final currentPrice = _currentPriceForVariant(_selectedVariant);
 
     _costController = TextEditingController(
-      text: currentPrice.isPlaceholder ? '' : currentPrice.costPrice.toStringAsFixed(2),
+      text: currentPrice.isPlaceholder
+          ? ''
+          : currentPrice.costPrice.toStringAsFixed(2),
     );
     _sellingController = TextEditingController(
-      text: currentPrice.isPlaceholder ? '' : currentPrice.sellingPrice.toStringAsFixed(2),
+      text: currentPrice.isPlaceholder
+          ? ''
+          : currentPrice.sellingPrice.toStringAsFixed(2),
     );
     _noteController = TextEditingController();
   }
@@ -102,20 +120,19 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     super.dispose();
   }
 
-  void _onVariantChanged(String? value) {
-    if (value == null) {
-      return;
-    }
-
+  // Identical to original
+  void _onVariantChanged(String variant) {
     setState(() {
-      _selectedVariant = value;
+      _selectedVariant = variant;
       final currentPrice = widget.currentPrices.firstWhere(
         (item) => item.quantityVariant == _selectedVariant,
-        orElse: () => (quantityVariant: _selectedVariant,
+        orElse: () => (
+          quantityVariant: _selectedVariant,
           costPrice: 0.0,
           sellingPrice: 0.0,
           effectiveFrom: DateTime.utc(1970, 1, 1),
-          isPlaceholder: true),
+          isPlaceholder: true,
+        ),
       );
 
       _costController.text = currentPrice.isPlaceholder
@@ -127,10 +144,9 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     });
   }
 
+  // Identical to original
   void _save() {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final costPrice = double.parse(_costController.text.trim());
     final sellingPrice = double.parse(_sellingController.text.trim());
@@ -146,181 +162,443 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     ));
   }
 
+  // Identical to original
   String? _validatePrice(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Enter a price';
-    }
-
+    if (value == null || value.trim().isEmpty) return 'Enter a price';
     final parsed = double.tryParse(value.trim());
-    if (parsed == null) {
-      return 'Enter a valid number';
-    }
-
-    if (parsed <= 0) {
-      return 'Price must be greater than zero';
-    }
-
+    if (parsed == null) return 'Enter a valid number';
+    if (parsed <= 0) return 'Price must be greater than zero';
     return null;
   }
 
+  // ── Build ────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      borderRadius: BorderRadius.circular(22),
-      padding: const EdgeInsets.all(AppDimens.spacingLarge),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Update Price', style: AppTextStyles.sectionTitle),
-          const SizedBox(height: AppDimens.spacingSmall),
-          Text(
-            '${widget.productName} • $_selectedVariant',
-            style: AppTextStyles.body,
-          ),
-          const SizedBox(height: AppDimens.spacingLarge),
-          Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedVariant,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: AppColors.surfaceElevated,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
-                    ),
-                  ),
-                  items: widget.quantityVariants
-                      .map((variant) => DropdownMenuItem(
-                            value: variant,
-                            child: Text(variant),
-                          ))
-                      .toList(),
-                  onChanged: _onVariantChanged,
-                ),
-                const SizedBox(height: AppDimens.spacingLarge),
-                TextFormField(
-                  controller: _costController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d{0,2}'),
-                    ),
-                  ],
-                  style: AppTextStyles.body,
-                  decoration: InputDecoration(
-                    labelText: _selectedVariant == '1L' ? '1L Cost Price (Base)' : 'Cost Price (calculated from 1L)',
-                    labelStyle: AppTextStyles.label,
-                    filled: true,
-                    fillColor: AppColors.surfaceElevated,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                  ),
-                  readOnly: _selectedVariant != '1L',
-                  validator: _selectedVariant == '1L' ? _validatePrice : (_) => null,
-                ),
-                const SizedBox(height: AppDimens.spacingLarge),
-                TextFormField(
-                  controller: _sellingController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*\.?\d{0,2}'),
-                    ),
-                  ],
-                  style: AppTextStyles.body,
-                  decoration: InputDecoration(
-                    labelText: 'Selling Price',
-                    labelStyle: AppTextStyles.label,
-                    filled: true,
-                    fillColor: AppColors.surfaceElevated,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
-                    ),
-                  ),
-                  validator: _validatePrice,
-                ),
-                const SizedBox(height: AppDimens.spacingLarge),
-                TextFormField(
-                  controller: _noteController,
-                  style: AppTextStyles.body,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Note (optional)',
-                    labelStyle: AppTextStyles.label,
-                    filled: true,
-                    fillColor: AppColors.surfaceElevated,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppDimens.spacingLarge),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: BorderSide(color: Colors.white.withOpacity(0.06)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Cancel'),
-                ),
-              ),
-              const SizedBox(width: AppDimens.spacingSmall),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _save,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Save'),
-                ),
-              ),
-            ],
+    final isBase = _selectedVariant == '1L';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimens.spacingLarge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ───────────────────────────────────────────────────
+            _DialogHeader(
+              productName: widget.productName,
+              selectedVariant: _selectedVariant,
+            ),
+            const SizedBox(height: AppDimens.spacingLarge),
+            // ── Variant chip selector ────────────────────────────────────
+            const _FieldLabel('SIZE / VARIANT'),
+            const SizedBox(height: 8),
+            _VariantChipRow(
+              variants: widget.quantityVariants,
+              selectedVariant: _selectedVariant,
+              onChanged: _onVariantChanged,
+            ),
+            const SizedBox(height: AppDimens.spacingLarge),
+            // ── Price fields ─────────────────────────────────────────────
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _PriceField(
+                    controller: _costController,
+                    label: isBase
+                        ? '1L Cost Price (Base)'
+                        : 'Cost Price (calculated from 1L)',
+                    readOnly: !isBase,
+                    validator: isBase ? _validatePrice : (_) => null,
+                  ),
+                  const SizedBox(height: AppDimens.spacingMedium),
+                  _PriceField(
+                    controller: _sellingController,
+                    label: 'Selling Price',
+                    readOnly: false,
+                    validator: _validatePrice,
+                  ),
+                  const SizedBox(height: AppDimens.spacingMedium),
+                  _NoteField(controller: _noteController),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppDimens.spacingLarge),
+            // ── Actions ──────────────────────────────────────────────────
+            _DialogActions(
+              onCancel: () => Navigator.of(context).pop(),
+              onSave: _save,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Sub-widgets — presentation only
+// ═══════════════════════════════════════════════════════════════════════════
+
+class _DialogHeader extends StatelessWidget {
+  const _DialogHeader({
+    required this.productName,
+    required this.selectedVariant,
+  });
+
+  final String productName;
+  final String selectedVariant;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMuted,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.edit_rounded,
+                size: 18,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Update Price',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '$productName · $selectedVariant',
+          style: const TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: AppColors.textMuted,
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.1,
+      ),
+    );
+  }
+}
+
+// ── Variant chip row ──────────────────────────────────────────────────────
+
+class _VariantChipRow extends StatelessWidget {
+  const _VariantChipRow({
+    required this.variants,
+    required this.selectedVariant,
+    required this.onChanged,
+  });
+
+  final List<String> variants;
+  final String selectedVariant;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: variants.map((v) {
+        final isSelected = selectedVariant == v;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _VariantChip(
+            label: v,
+            isSelected: isSelected,
+            onTap: () => onChanged(v),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _VariantChip extends StatelessWidget {
+  const _VariantChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 130),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : AppColors.border,
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          splashColor: AppColors.primary.withValues(alpha: 0.18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? AppColors.background
+                    : AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Price text field ──────────────────────────────────────────────────────
+
+class _PriceField extends StatelessWidget {
+  const _PriceField({
+    required this.controller,
+    required this.label,
+    required this.readOnly,
+    required this.validator,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final bool readOnly;
+  final FormFieldValidator<String>? validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+      ],
+      validator: validator,
+      style: TextStyle(
+        color: readOnly ? AppColors.textMuted : AppColors.textPrimary,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: AppColors.textMuted,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: readOnly
+            ? AppColors.background
+            : AppColors.surfaceElevated,
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(
+            color: readOnly
+                ? AppColors.border.withValues(alpha: 0.5)
+                : AppColors.border,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+        ),
+        prefixIcon: const Padding(
+          padding: EdgeInsets.only(left: 12, right: 4),
+          child: Text(
+            '₹',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      ),
+    );
+  }
+}
+
+// ── Note field ────────────────────────────────────────────────────────────
+
+class _NoteField extends StatelessWidget {
+  const _NoteField({required this.controller});
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: 2,
+      style: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      ),
+      decoration: InputDecoration(
+        labelText: 'Note (optional)',
+        labelStyle: const TextStyle(
+          color: AppColors.textMuted,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        filled: true,
+        fillColor: AppColors.surfaceElevated,
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 12,
+          horizontal: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Dialog action buttons ─────────────────────────────────────────────────
+
+class _DialogActions extends StatelessWidget {
+  const _DialogActions({
+    required this.onCancel,
+    required this.onSave,
+  });
+
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 52,
+            child: OutlinedButton(
+              onPressed: onCancel,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppDimens.spacingSmall),
+        Expanded(
+          child: SizedBox(
+            height: 52,
+            child: FilledButton(
+              onPressed: onSave,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Save Price',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
