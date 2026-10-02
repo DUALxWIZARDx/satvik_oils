@@ -125,6 +125,15 @@ void main() {
         finalTotal: 400,
         cost: 40,
       ).copyWith(unitPriceSnapshot: 100),
+      sale(
+        id: 'd',
+        order: 'four',
+        product: 'groundnut_oil',
+        variant: '2L',
+        total: 360,
+        finalTotal: 324,
+        cost: 80,
+      ).copyWith(unitPriceSnapshot: 180),
     ], []);
 
     final product = report.products.single;
@@ -137,6 +146,10 @@ void main() {
       product.variants.firstWhere((v) => v.variant == '250ml').quantity,
       4,
     );
-    expect(product.litresSold, 4.5);
+    final twoL = product.variants.firstWhere((v) => v.variant == '2L');
+    expect(twoL.quantity, 2);
+    expect(twoL.revenue, 324);
+    expect(twoL.profit, 164);
+    expect(product.litresSold, 8.5);
   });
 }

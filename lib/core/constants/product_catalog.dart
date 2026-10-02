@@ -18,6 +18,7 @@ class ProductCatalog {
     '250ml',
     '500ml',
     '1L',
+    '2L',
     '5L',
   ];
 

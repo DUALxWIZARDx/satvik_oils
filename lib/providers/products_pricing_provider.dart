@@ -68,18 +68,15 @@ class ProductsPricingProvider extends ChangeNotifier {
         sellingPriceFor1L: sellingPrice,
       );
     } else {
-      // Non-1L: costPrice should be calculated from 1L and provided by UI as read-only.
-      await _productRepository.savePrice(
+      // The repository is the source of truth for proportional variant cost.
+      // Do not persist the read-only UI value, which may be a legacy placeholder.
+      await _productRepository.saveVariantSellingPrice(
         productId: productId,
         quantityVariant: quantityVariant,
         sellingPrice: sellingPrice,
-        costPrice: costPrice,
       );
     }
 
-    await loadCurrentPrices(
-      ProductCatalog.products,
-      forceReload: true,
-    );
+    await loadCurrentPrices(ProductCatalog.products, forceReload: true);
   }
 }

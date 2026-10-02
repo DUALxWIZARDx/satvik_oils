@@ -857,10 +857,10 @@ class _CartControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasItems = provider.cart.isNotEmpty;
-    final sectionGap = compact ? 4.0 : 14.0;
+    final sectionGap = compact ? 2.0 : 14.0;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, compact ? 4 : 14, 16, compact ? 6 : 16),
+      padding: EdgeInsets.fromLTRB(16, compact ? 2 : 14, 16, compact ? 4 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -879,8 +879,8 @@ class _CartControls extends StatelessWidget {
           _PaymentChips(provider: provider),
           SizedBox(height: sectionGap),
           // Totals
-          _TotalsBlock(provider: provider),
-          SizedBox(height: compact ? 4 : 16),
+          _TotalsBlock(provider: provider, compact: compact),
+          SizedBox(height: compact ? 2 : 16),
           // Save Order
           _SaveOrderButton(provider: provider, hasItems: hasItems),
         ],
@@ -1088,15 +1088,19 @@ class _PaymentModeChip extends StatelessWidget {
 // ── Totals block ──────────────────────────────────────────────────────────
 
 class _TotalsBlock extends StatelessWidget {
-  const _TotalsBlock({required this.provider});
+  const _TotalsBlock({required this.provider, required this.compact});
   final SalesProvider provider;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final hasDiscount = provider.effectiveDiscountPercent > 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: compact ? 8 : 12,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surfaceElevated,
         borderRadius: BorderRadius.circular(10),
@@ -1154,9 +1158,9 @@ class _TotalsBlock extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 8),
+          SizedBox(height: compact ? 6 : 8),
           const Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 10),
+          SizedBox(height: compact ? 8 : 10),
           _TotalRow(
             label: 'Total',
             value: AnimatedCurrencyText(

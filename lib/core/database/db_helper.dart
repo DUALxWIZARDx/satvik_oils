@@ -6,6 +6,7 @@ import 'migrations/v1_initial_schema.dart';
 import 'migrations/v2_add_order_id_to_sales.dart';
 import 'migrations/v3_add_order_summary_to_sales.dart';
 import 'migrations/v4_add_membership.dart';
+import 'migrations/v5_add_catalog_variants.dart';
 
 class DbHelper {
   DbHelper._();
@@ -20,6 +21,7 @@ class DbHelper {
     2: V2AddOrderIdToSales.migrate,
     3: V3AddOrderSummaryToSales.migrate,
     4: V4AddMembership.migrate,
+    5: V5AddCatalogVariants.migrate,
   };
 
   Database? _database;

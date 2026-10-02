@@ -126,12 +126,14 @@ class ProductRepository {
     }
 
     final row = rows.first;
-    final sellingPrice = (row[ProductPriceTable.sellingPrice] as num).toDouble();
+    final sellingPrice = (row[ProductPriceTable.sellingPrice] as num)
+        .toDouble();
     final costPrice = (row[ProductPriceTable.costPrice] as num).toDouble();
     final effectiveFrom = DateTime.parse(
       row[ProductPriceTable.effectiveFrom] as String,
     );
-    final isPlaceholder = sellingPrice == 0.0 &&
+    final isPlaceholder =
+        sellingPrice == 0.0 &&
         costPrice == 0.0 &&
         effectiveFrom == DateTime.utc(1970, 1, 1);
 
@@ -183,6 +185,34 @@ class ProductRepository {
     });
   }
 
+  /// Saves a variant's selling price while deriving its cost from the current
+  /// 1L cost. This keeps every non-base variant in the same price-history
+  /// table and prevents a newly introduced variant from carrying a stale
+  /// placeholder cost.
+  Future<void> saveVariantSellingPrice({
+    required String productId,
+    required String quantityVariant,
+    required double sellingPrice,
+    DateTime? effectiveFrom,
+  }) async {
+    final basePrice = await getCurrentPriceDetails(
+      productId: productId,
+      quantityVariant: '1L',
+    );
+    final calculatedCost =
+        (basePrice?.costPrice ?? 0.0) *
+        _variantVolumeMl(quantityVariant) /
+        1000.0;
+
+    await savePrice(
+      productId: productId,
+      quantityVariant: quantityVariant,
+      sellingPrice: sellingPrice,
+      costPrice: double.parse(calculatedCost.toStringAsFixed(2)),
+      effectiveFrom: effectiveFrom,
+    );
+  }
+
   int _variantVolumeMl(String variant) {
     if (variant.endsWith('ml')) {
       return int.tryParse(variant.replaceAll('ml', '')) ?? 0;
@@ -207,7 +237,9 @@ class ProductRepository {
     DateTime? effectiveFrom,
   }) async {
     // Determine variants to update
-    final product = ProductCatalog.products.firstWhere((p) => p.id == productId);
+    final product = ProductCatalog.products.firstWhere(
+      (p) => p.id == productId,
+    );
     final variants = product.quantityVariants;
 
     // Insert price row for each variant with calculated cost and appropriate selling price
@@ -220,7 +252,10 @@ class ProductRepository {
       if (variant == '1L') {
         sellingPrice = sellingPriceFor1L;
       } else {
-        final current = await getCurrentPriceDetails(productId: productId, quantityVariant: variant);
+        final current = await getCurrentPriceDetails(
+          productId: productId,
+          quantityVariant: variant,
+        );
         sellingPrice = current?.sellingPrice ?? 0.0;
       }
 

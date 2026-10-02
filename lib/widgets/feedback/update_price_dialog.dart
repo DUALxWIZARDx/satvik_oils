@@ -93,6 +93,34 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     );
   }
 
+  double _calculatedCostForVariant(String variant) {
+    if (variant == '1L') {
+      return _currentPriceForVariant(variant).costPrice;
+    }
+
+    final baseCost = _currentPriceForVariant('1L').costPrice;
+    final normalized = variant.trim().toLowerCase();
+    final multiplier = normalized.endsWith('ml')
+        ? (double.tryParse(normalized.substring(0, normalized.length - 2)) ??
+                  0) /
+              1000
+        : normalized.endsWith('l')
+        ? double.tryParse(normalized.substring(0, normalized.length - 1)) ?? 0
+        : 0;
+    return baseCost * multiplier;
+  }
+
+  String _costTextForVariant(String variant) {
+    final currentPrice = _currentPriceForVariant(variant);
+    if (variant != '1L') {
+      final calculatedCost = _calculatedCostForVariant(variant);
+      return calculatedCost == 0 ? '' : calculatedCost.toStringAsFixed(2);
+    }
+    return currentPrice.isPlaceholder
+        ? ''
+        : currentPrice.costPrice.toStringAsFixed(2);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -100,9 +128,7 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
     final currentPrice = _currentPriceForVariant(_selectedVariant);
 
     _costController = TextEditingController(
-      text: currentPrice.isPlaceholder
-          ? ''
-          : currentPrice.costPrice.toStringAsFixed(2),
+      text: _costTextForVariant(_selectedVariant),
     );
     _sellingController = TextEditingController(
       text: currentPrice.isPlaceholder
@@ -135,9 +161,7 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
         ),
       );
 
-      _costController.text = currentPrice.isPlaceholder
-          ? ''
-          : currentPrice.costPrice.toStringAsFixed(2);
+      _costController.text = _costTextForVariant(_selectedVariant);
       _sellingController.text = currentPrice.isPlaceholder
           ? ''
           : currentPrice.sellingPrice.toStringAsFixed(2);
@@ -148,18 +172,22 @@ class _UpdatePriceDialogState extends State<UpdatePriceDialog> {
   void _save() {
     if (!_formKey.currentState!.validate()) return;
 
-    final costPrice = double.parse(_costController.text.trim());
+    // Non-base costs are read-only and derived by the repository. A product
+    // with no configured 1L cost legitimately displays an empty field.
+    final costPrice = double.tryParse(_costController.text.trim()) ?? 0.0;
     final sellingPrice = double.parse(_sellingController.text.trim());
     final note = _noteController.text.trim().isEmpty
         ? null
         : _noteController.text.trim();
 
-    Navigator.of(context).pop(UpdatePriceDialogResult(
-      quantityVariant: _selectedVariant,
-      costPrice: costPrice,
-      sellingPrice: sellingPrice,
-      note: note,
-    ));
+    Navigator.of(context).pop(
+      UpdatePriceDialogResult(
+        quantityVariant: _selectedVariant,
+        costPrice: costPrice,
+        sellingPrice: sellingPrice,
+        note: note,
+      ),
+    );
   }
 
   // Identical to original
@@ -444,9 +472,7 @@ class _PriceField extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: readOnly
-            ? AppColors.background
-            : AppColors.surfaceElevated,
+        fillColor: readOnly ? AppColors.background : AppColors.surfaceElevated,
         contentPadding: const EdgeInsets.symmetric(
           vertical: 14,
           horizontal: 16,
@@ -541,10 +567,7 @@ class _NoteField extends StatelessWidget {
 // ── Dialog action buttons ─────────────────────────────────────────────────
 
 class _DialogActions extends StatelessWidget {
-  const _DialogActions({
-    required this.onCancel,
-    required this.onSave,
-  });
+  const _DialogActions({required this.onCancel, required this.onSave});
 
   final VoidCallback onCancel;
   final VoidCallback onSave;
@@ -567,10 +590,7 @@ class _DialogActions extends StatelessWidget {
               ),
               child: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -590,10 +610,7 @@ class _DialogActions extends StatelessWidget {
               ),
               child: const Text(
                 'Save Price',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
             ),
           ),

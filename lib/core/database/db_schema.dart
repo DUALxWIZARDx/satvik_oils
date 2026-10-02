@@ -1,6 +1,6 @@
 class DbSchema {
   const DbSchema._();
-  static const int version = 4;
+  static const int version = 5;
 }
 
 class ProductTable {
